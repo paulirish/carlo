@@ -14,21 +14,9 @@
  * limitations under the License.
  */
 
-const {TestRunner, Reporter, Matchers} = require('@pptr/testrunner');
+const { describe, it } = require('node:test');
+const assert = require('node:assert/strict');
 const rpc = require('./rpc');
-
-// Runner holds and runs all the tests
-const runner = new TestRunner({
-  parallel: 1, // run 2 parallel threads
-  timeout: 1000, // setup timeout of 1 second per test
-});
-// Simple expect-like matchers
-const {expect} = new Matchers();
-
-// Extract jasmine-like DSL into the global namespace
-const {describe, xdescribe, fdescribe} = runner;
-const {it, fit, xit} = runner;
-const {beforeAll, beforeEach, afterAll, afterEach} = runner;
 
 async function createChildWorld(rpc, initializer, ...args) {
   let sendToParent;
@@ -48,39 +36,43 @@ async function createChildWorld(rpc, initializer, ...args) {
 }
 
 describe('rpc', () => {
-  it('call method', async(state, test) => {
+  it('call method', async() => {
     class Foo {
       sum(a, b) { return a + b; }
     }
     const foo = rpc.handle(new Foo());
-    expect(await foo.sum(1, 3)).toBe(4);
+    assert.strictEqual(await foo.sum(1, 3), 4);
   });
-  it('call method with object', async(state, test) => {
+
+  it('call method with object', async() => {
     class Foo {
       sum(a, b) { return { value: a.value + b.value }; }
     }
     const foo = rpc.handle(new Foo());
     const result = await foo.sum({value: 1}, {value: 3});
-    expect(result.value).toBe(4);
+    assert.strictEqual(result.value, 4);
   });
-  it('call method with array', async(state, test) => {
+
+  it('call method with array', async() => {
     class Foo {
       sum(arr) { return arr.reduce((a, c) => a + c, 0); }
     }
     const foo = rpc.handle(new Foo());
     const result = await foo.sum([1, 2, 3, 4, 5]);
-    expect(result).toBe(15);
+    assert.strictEqual(result, 15);
   });
-  it('call method with objects with handles', async(state, test) => {
+
+  it('call method with objects with handles', async() => {
     class Foo {
       async call(val) { return await val.a[0].name(); }
       name() { return 'name'; }
     }
     const foo = rpc.handle(new Foo());
     const result = await foo.call({a: [foo]});
-    expect(result).toBe('name');
+    assert.strictEqual(result, 'name');
   });
-  it('call method with object with recursive link', async(state, test) => {
+
+  it('call method with object with recursive link', async() => {
     class Foo {
       async call(val) { return await val.a[0].name(); }
       name() { return 'name'; }
@@ -88,144 +80,132 @@ describe('rpc', () => {
     const foo = rpc.handle(new Foo());
     const a = {};
     a.a = a;
-    try {
+    await assert.rejects(async() => {
       await foo.call({a});
-    } catch (e) {
-      expect(e.message).toBe('Object reference chain is too long');
-    }
+    }, { message: 'Object reference chain is too long' });
   });
-  it('call method that does not exist', async(state, test) => {
-    class Foo {
-    }
+
+  it('call method that does not exist', async() => {
+    class Foo {}
     const foo = rpc.handle(new Foo());
-    try {
+    await assert.rejects(async() => {
       await foo.sum(1, 3);
-      expect(true).toBeFalsy();
-    } catch (e) {
-      expect(e.toString()).toContain('There is no member');
-    }
+    }, /There is no member/);
   });
-  it('call private method', async(state, test) => {
+
+  it('call private method', async() => {
     const foo = rpc.handle({});
-    try {
+    await assert.rejects(async() => {
       await foo._sum(1, 3);
-      expect(true).toBeFalsy();
-    } catch (e) {
-      expect(e.toString()).toContain('Private members are not exposed over RPC');
-    }
+    }, /Private members are not exposed over RPC/);
   });
-  it('call method exception', async(state, test) => {
+
+  it('call method exception', async() => {
     class Foo {
       sum(a, b) { return b + c; }
     }
     const foo = rpc.handle(new Foo());
-    try {
+    await assert.rejects(async() => {
       await foo.sum(1, 3);
-      expect(true).toBeFalsy();
-    } catch (e) {
-      expect(e.toString()).toContain('c is not defined');
-    }
+    }, /c is not defined/);
   });
-  it('call nested exception', async(state, test) => {
+
+  it('call nested exception', async() => {
     class Foo {
       sum(a, b) { return rpc.handle(this).doSum(a, b); }
       doSum(a, b) { return b + c; }
     }
     const foo = rpc.handle(new Foo());
-    try {
+    await assert.rejects(async() => {
       await foo.sum(1, 3);
-      expect(true).toBeFalsy();
-    } catch (e) {
-      expect(e.toString()).toContain('c is not defined');
-    }
+    }, /c is not defined/);
   });
-  it('handle to function', async(state, test) => {
+
+  it('handle to function', async() => {
     class Foo {
       call(callback) { return callback(); }
     }
     const foo = rpc.handle(new Foo());
     let calls = 0;
     await foo.call(rpc.handle(() => ++calls));
-    expect(calls).toBe(1);
+    assert.strictEqual(calls, 1);
   });
-  it('handle to function exception', async(state, test) => {
+
+  it('handle to function exception', async() => {
     class Foo {
       call(callback) { return callback(); }
     }
     const foo = rpc.handle(new Foo());
     const calls = 0;
-    try {
+    await assert.rejects(async() => {
       await foo.call(rpc.handle(() => ++calls));
-      expect(true).toBeFalsy();
-    } catch (e) {
-      expect(e.toString()).toContain('Assignment to constant');
-    }
+    }, /Assignment to constant/);
   });
-  it('access property', async(state, test) => {
+
+  it('access property', async() => {
     const foo = rpc.handle({ value: 'Hello wold' });
-    expect(await foo.value()).toBe('Hello wold');
+    assert.strictEqual(await foo.value(), 'Hello wold');
   });
-  it('access property with params', async(state, test) => {
+
+  it('access property with params', async() => {
     const foo = rpc.handle({ value: 'Hello wold' });
-    try {
-      expect(await foo.value(1)).toBe('Hello wold');
-      expect(true).toBeFalsy();
-    } catch (e) {
-      expect(e.toString()).toContain('is not a function');
-    }
+    await assert.rejects(async() => {
+      await foo.value(1);
+    }, /is not a function/);
   });
-  it('materialize handle', async(state, test) => {
+
+  it('materialize handle', async() => {
     const object = {};
     const handle = rpc.handle(object);
-    expect(rpc.object(handle) === object).toBeTruthy();
+    assert.strictEqual(rpc.object(handle), object);
   });
-  it('access disposed handle', async(state, test) => {
+
+  it('access disposed handle', async() => {
     class Foo {
       sum(a, b) { return b + c; }
     }
     const foo = rpc.handle(new Foo());
     rpc.dispose(foo);
-    try {
+    await assert.rejects(async() => {
       await foo.sum(1, 2);
-      expect(true).toBeFalsy();
-    } catch (e) {
-      expect(e.toString()).toContain('Object has been diposed');
-    }
+    }, /Object has been diposed/);
   });
-  it('dedupe implicit handles in the same world', async(state, test) => {
+
+  it('dedupe implicit handles in the same world', async() => {
     let foo2;
     class Foo { foo(f) { foo2 = f; }}
     const foo = rpc.handle(new Foo());
     await foo.foo(foo);
-    expect(foo === foo2).toBeTruthy();
+    assert.strictEqual(foo, foo2);
   });
-  it('handle to handle should throw', async(state, test) => {
+
+  it('handle to handle should throw', async() => {
     const handle = rpc.handle({});
-    try {
+    assert.throws(() => {
       rpc.handle(handle);
-      expect(true).toBeFalsy();
-    } catch (e) {
-      expect(e.toString()).toContain('Can not return handle to handle');
-    }
+    }, /Can not return handle to handle/);
   });
-  it('parent / child communication', async(state, test) => {
+
+  it('parent / child communication', async() => {
     const messages = [];
     class Root { hello(message) { messages.push(message); } }
     const root = rpc.handle(new Root());
     await createChildWorld(rpc, p => p.hello('one'), root);
     await createChildWorld(rpc, p => p.hello('two'), root);
-    expect(messages.join(',')).toBe('one,two');
+    assert.strictEqual(messages.join(','), 'one,two');
   });
-  it('parent / grand child communication', async(state, test) => {
+
+  it('parent / grand child communication', async() => {
     const messages = [];
     class Root { hello(message) { messages.push(message); } }
     const root = rpc.handle(new Root());
     await createChildWorld(rpc, async(p, r) => {
       await createChildWorld(r, p => p.hello('one'), p);
     }, root);
-    expect(messages.join(',')).toBe('one');
+    assert.strictEqual(messages.join(','), 'one');
   });
-  it('child / child communication', async(state, test) => {
+
+  it('child / child communication', async() => {
     const messages = [];
     class Parent {
       constructor() { this.children_ = []; }
@@ -248,9 +228,10 @@ describe('rpc', () => {
     await createChildWorld(rpc, (p, r) => p.addChild(r.handle(new Child())), parent);
     await new Promise(f => setTimeout(f, 0));
     await new Promise(f => setTimeout(f, 0));
-    expect(messages.join(',')).toBe('hello,hello');
+    assert.strictEqual(messages.join(','), 'hello,hello');
   });
-  it('dispose world', async(state, test) => {
+
+  it('dispose world', async() => {
     const messages = [];
     class Root { hello(message) { messages.push(message); } }
     const root = rpc.handle(new Root());
@@ -264,9 +245,10 @@ describe('rpc', () => {
     childRoot.hello('hello');
     await new Promise(f => setTimeout(f, 0));
 
-    expect(messages.join(',')).toBe('hello');
+    assert.strictEqual(messages.join(','), 'hello');
   });
-  it('dispose world half way', async(state, test) => {
+
+  it('dispose world half way', async() => {
     const messages = [];
     let go;
     class Root {
@@ -281,12 +263,6 @@ describe('rpc', () => {
     go();
     await new Promise(f => setTimeout(f, 0));
     await new Promise(f => setTimeout(f, 0));
-    expect(messages.join(',')).toBe('hello');
+    assert.strictEqual(messages.join(','), 'hello');
   });
 });
-
-// Reporter subscribes to TestRunner events and displays information in terminal
-new Reporter(runner);
-
-// Run all tests.
-runner.run();

@@ -12,19 +12,16 @@
   },
   "scripts": {
     "lint": "([ \"$CI\" = true ] && eslint --quiet -f codeframe . || eslint .)",
-    "test": "node rpc/test.js && node test/test.js",
-    "headful-test": "node test/headful.js"
+    "test": "node --test rpc/test.js test/color.spec.js test/app.spec.js"
   },
   "keywords": [],
   "author": "The Chromium Authors",
   "license": "Apache-2.0",
   "dependencies": {
     "debug": "^4.1.0",
-    "puppeteer-core": "~1.12.0"
+    "puppeteer-core": "^25.10.0"
   },
   "devDependencies": {
-    "eslint": "^5.8.0",
-    "@pptr/testrunner": "^0.5.0",
-    "@pptr/testserver": "^0.5.0"
+    "eslint": "^8.57.1"
   }
 }
