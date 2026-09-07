@@ -46,7 +46,7 @@ class Backend {
 
 (async() => {
   const app = await carlo.launch(
-    {title: 'Main', width: 300, height: 100, top: 10, left: 10 });
+      {title: 'Main', width: 300, height: 100, top: 10, left: 10 });
   app.on('exit', () => process.exit());
   const mainWindow = app.mainWindow();
   mainWindow.on('close', () => process.exit());

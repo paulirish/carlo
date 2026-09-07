@@ -4,27 +4,32 @@
   "description": "Carlo is a framework for rendering Node data structures using Chrome browser.",
   "repository": "github:GoogleChromeLabs/carlo",
   "engines": {
-    "node": ">=7.6.0"
+    "node": ">=18.0.0"
   },
   "main": "index.js",
   "directories": {
     "lib": "lib"
   },
   "scripts": {
-    "lint": "([ \"$CI\" = true ] && eslint --quiet -f codeframe . || eslint .)",
-    "test": "node rpc/test.js && node test/test.js",
+    "lint": "eslint .",
+    "download-browser": "node scripts/download-browser.js",
+    "test:unit": "node --test test/find_chrome.spec.js test/security.spec.js rpc/test.js test/color.spec.js",
+    "test:browser": "node --test test/app.spec.js",
+    "test": "npm run test:unit && npm run test:browser",
     "headful-test": "node test/headful.js"
   },
   "keywords": [],
   "author": "The Chromium Authors",
   "license": "Apache-2.0",
   "dependencies": {
-    "debug": "^4.1.0",
-    "puppeteer-core": "~1.12.0"
+    "@puppeteer/browsers": "^2.7.0",
+    "debug": "^4.3.4",
+    "mime-types": "^2.1.35",
+    "puppeteer-core": "^25.9.0"
   },
   "devDependencies": {
-    "eslint": "^5.8.0",
-    "@pptr/testrunner": "^0.5.0",
-    "@pptr/testserver": "^0.5.0"
+    "@eslint/js": "^8.57.0",
+    "eslint": "^8.57.0",
+    "globals": "^15.0.0"
   }
 }

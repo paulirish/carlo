@@ -14,42 +14,34 @@
  * limitations under the License.
  */
 
-const {TestRunner, Reporter, Matchers} = require('@pptr/testrunner');
+'use strict';
 
-const path = require('path');
+const { describe, it, afterEach } = require('node:test');
+const assert = require('node:assert/strict');
 const carlo = require('../lib/carlo');
 
-// Runner holds and runs all the tests
-const testRunner = new TestRunner({
-  parallel: 1, // run 2 parallel threads
-  timeout: 3000, // setup timeout of 1 second per test
-});
-const {expect} = new Matchers();
-const {beforeAll, beforeEach, afterAll, afterEach} = testRunner;
-const {describe, xdescribe, fdescribe} = testRunner;
-const {it, fit, xit} = testRunner;
-
 describe('app reuse', () => {
-  fit('load returns value', async() => {
+  let app;
+
+  afterEach(async() => {
+    if (app) {
+      try { await app.exit(); } catch (e) { /* ignore */ }
+      app = null;
+    }
+  });
+
+  it('load returns value', async() => {
     app = await carlo.launch();
     let callback;
-    const windowPromise = new Promise(f => callback = f);
+    const windowPromise = new Promise(f => { callback = f; });
     app.on('window', callback);
 
-    try {
-      await carlo.launch({paramsForReuse: {val: 42}});
-      expect(false).toBeTruthy();
-    } catch (e) {
-      expect(e.toString()).toContain('already running');
-    }
+    await assert.rejects(
+        async() => { await carlo.launch({ paramsForReuse: { val: 42 } }); },
+        /already running/
+    );
 
     const window = await windowPromise;
-    expect(JSON.stringify(window.paramsForReuse())).toBe('{"val":42}');
+    assert.equal(JSON.stringify(window.paramsForReuse()), '{"val":42}');
   });
 });
-
-// Reporter subscribes to TestRunner events and displays information in terminal
-new Reporter(testRunner);
-
-// Run all tests.
-testRunner.run();
