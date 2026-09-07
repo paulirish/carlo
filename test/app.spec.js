@@ -237,7 +237,7 @@ module.exports.addTests = function({testRunner, expect}) {
         async function check() {
           const input = document.getElementById('file');
           const info = await self.carlo.fileInfo(input.files[0]);
-          checkFileInfo(info);
+          window.checkFileInfo(info);
         }
         </script>
         <body><input type="file" id="file"></body>`
