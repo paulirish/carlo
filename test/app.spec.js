@@ -17,6 +17,7 @@
 const { describe, it, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const fs = require('node:fs');
 const carlo = require('../lib/carlo');
 const { rpc } = require('../rpc');
 
@@ -108,6 +109,23 @@ describe('app basics', () => {
     const w2 = await app.createWindow();
     const result2 = await w2.evaluate(async() => (await appFunc()) + self.windowFunc);
     assert.strictEqual(result2, 'appundefined');
+  });
+
+  it('custom window bounds and screenshot verification', async() => {
+    app = await carlo.launch({ width: 600, height: 400, args: ['--no-sandbox'] });
+    app.serveFolder(path.join(__dirname, 'folder'));
+    await app.load('index.html');
+    const mainWindow = app.mainWindow();
+    assert.ok(mainWindow);
+
+    const screenshotDir = path.join(__dirname, 'screenshots');
+    if (!fs.existsSync(screenshotDir))
+      fs.mkdirSync(screenshotDir, { recursive: true });
+
+    const screenshotPath = path.join(screenshotDir, 'app_window.png');
+    await mainWindow.pageForTest().screenshot({ path: screenshotPath });
+    assert.ok(fs.existsSync(screenshotPath));
+    assert.ok(fs.statSync(screenshotPath).size > 0);
   });
 });
 

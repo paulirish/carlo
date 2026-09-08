@@ -12,7 +12,7 @@
   },
   "scripts": {
     "lint": "([ \"$CI\" = true ] && eslint --quiet -f codeframe . || eslint .)",
-    "test": "node --test rpc/test.js test/color.spec.js test/app.spec.js"
+    "test": "node --test rpc/test.js test/color.spec.js test/puppeteer.spec.js test/app.spec.js"
   },
   "keywords": [],
   "author": "The Chromium Authors",
