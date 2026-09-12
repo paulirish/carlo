@@ -54,4 +54,4 @@ class Terminal extends EventEmitter {
   }
 }
 
-rpc_process.init(() => rpc.handle(new Terminal));
+rpc_process.init(() => rpc.handle(new Terminal()));
