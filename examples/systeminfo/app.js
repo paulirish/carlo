@@ -35,7 +35,7 @@ async function run() {
           args: process.env.DEV === 'true' ? ['--auto-open-devtools-for-tabs'] : [],
           localDataDir: path.join(os.homedir(), '.carlosysteminfo'),
         });
-  } catch (e) {
+  } catch {
     // New window is opened in the running instance.
     console.log('Reusing the running instance');
     return;

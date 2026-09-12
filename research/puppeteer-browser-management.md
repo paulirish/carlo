@@ -15,18 +15,18 @@ Carlo should delete most of its hand-maintained OS path probing and recursive ca
 
 The public system lookup is deliberately narrower than Carlo's current heuristic search: it knows conventional **Google Chrome** locations for stable, beta, dev, and canary. It is not a general search of `PATH`, desktop files, arbitrary Chromium installations, or arbitrary Chrome for Testing app bundles. Explicit `executablePath` remains the appropriate escape hatch for those cases.
 
-## Installed dependency snapshot
+## Pre-cleanup dependency snapshot
 
-This checkout currently contains two independently resolved versions of `@puppeteer/browsers`:
+At the start of this research, the checkout contained two independently resolved versions of `@puppeteer/browsers`:
 
 | Consumer | Resolved version | Evidence |
 | --- | ---: | --- |
 | Carlo's direct dependency | 2.13.2 | [`pnpm-lock.yaml`](../pnpm-lock.yaml) records `^2.7.0 -> 2.13.2`. |
 | `puppeteer-core` 25.10.0 | 3.2.2 | [`pnpm-lock.yaml`](../pnpm-lock.yaml) records the nested 3.2.2 dependency. |
 
-This is not just deduplication noise. In the installed 2.13.2 declarations, `computeSystemExecutablePath(options)` always validates that a path exists. In the nested 3.2.2 declarations used by Puppeteer Core, the signature is `computeSystemExecutablePath(options, validatePath?)`. Puppeteer Core uses that newer form internally. Carlo should align its direct `@puppeteer/browsers` major with its selected Puppeteer Core release, or remove the direct dependency if Carlo stops managing downloads.
+This was not just deduplication noise. In the installed 2.13.2 declarations, `computeSystemExecutablePath(options)` always validates that a path exists. In the nested 3.2.2 declarations used by Puppeteer Core, the signature is `computeSystemExecutablePath(options, validatePath?)`. Puppeteer Core uses that newer form internally. The immediate dependency cleanup aligned Carlo's direct dependency with Puppeteer Core's 3.2.2 release.
 
-There is a second compatibility mismatch: [`package.json`](../package.json) advertises Node `>=18`, while the installed `puppeteer-core` 25.10.0 package declares Node `>=22.12.0`; Puppeteer's current system requirements say the same. [Puppeteer system requirements](https://pptr.dev/guides/system-requirements) A modernization plan must either raise Carlo's Node floor or deliberately select an older maintained Puppeteer line compatible with Node 18.
+There was a second compatibility mismatch: [`package.json`](../package.json) advertised Node `>=18`, while the installed `puppeteer-core` 25.10.0 package declared Node `>=22.12.0`; Puppeteer's current system requirements say the same. [Puppeteer system requirements](https://pptr.dev/guides/system-requirements) The immediate dependency cleanup raised Carlo's Node floor to `>=22.12.0`.
 
 ## Public API inventory
 

@@ -33,7 +33,7 @@ const os = require('os');
           channel: ['canary', 'stable'],
           localDataDir: path.join(os.homedir(), '.carlophotobooth'),
         });
-  } catch (e) {
+  } catch {
     // New window is opened in the running instance.
     console.log('Reusing the running instance');
     return;

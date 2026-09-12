@@ -41,7 +41,7 @@ describe('app integration tests', () => {
 
   afterEach(async() => {
     if (app) {
-      try { await app.exit(); } catch (e) { /* ignore */ }
+      try { await app.exit(); } catch { /* ignore */ }
       app = null;
     }
   });

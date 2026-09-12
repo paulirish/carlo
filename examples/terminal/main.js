@@ -41,7 +41,7 @@ class TerminalApp {
         icon: path.join(__dirname, '/app_icon.png'),
         top: this.lastTop_,
         left: this.lastLeft_ });
-    } catch (e) {
+    } catch {
       console.log('Reusing the running instance');
       return;
     }

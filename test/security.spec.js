@@ -44,7 +44,7 @@ describe('Security and File Serving unit tests', () => {
       if (!realFile.startsWith(realFolder + path.sep))
         isOutside = true;
 
-    } catch (e) {
+    } catch {
       isOutside = true;
     }
     assert.equal(isOutside, true);
@@ -65,8 +65,8 @@ describe('Security and File Serving unit tests', () => {
       const isAllowed = realFile.startsWith(realFolder + path.sep) || realFile === realFolder;
       assert.equal(isAllowed, false);
     } finally {
-      try { if (fs.existsSync(symlinkPath)) fs.unlinkSync(symlinkPath); } catch (e) { /* ignore */ }
-      try { if (fs.existsSync(tmpDir)) fs.rmdirSync(tmpDir); } catch (e) { /* ignore */ }
+      try { if (fs.existsSync(symlinkPath)) fs.unlinkSync(symlinkPath); } catch { /* ignore */ }
+      try { if (fs.existsSync(tmpDir)) fs.rmdirSync(tmpDir); } catch { /* ignore */ }
     }
   });
 });
