@@ -65,7 +65,8 @@ export async function launch(options: LaunchOptions): Promise<App> {
   return {
     closed,
     close() {
-      close ??= running.close().then(() => settleClosed('requested'));
+      settleClosed('requested');
+      close ??= running.close();
       return close;
     },
   };
