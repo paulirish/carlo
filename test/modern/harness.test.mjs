@@ -34,6 +34,16 @@ test('launch failures retain their cause and clean up promptly', async() => {
     error.code === 'ERR_BROWSER_LAUNCH_FAILED' && error.cause === cause);
 });
 
+test('launch failures still close Chrome for caller-owned profiles', async() => {
+  const [{launchWithDriver}, {ScriptedChromeDriver}] = await modules();
+  const driver = new ScriptedChromeDriver({navigate: {fail: new Error('bad page')}});
+  await assert.rejects(launchWithDriver(driver, {
+    ...options,
+    request: {...options.request, profilePath: '/tmp/carlo-profile'},
+  }), {code: 'ERR_NAVIGATION_FAILED'});
+  assert.deepEqual(driver.calls, ['launch', 'navigate', 'close']);
+});
+
 test('disconnect wins an ordering race', async() => {
   const [{launchWithDriver}, {ScriptedChromeDriver}] = await modules();
   const driver = new ScriptedChromeDriver({navigate: 'hang', disconnectAt: 'navigate'});

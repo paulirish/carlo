@@ -28,6 +28,7 @@ class PuppeteerSession implements ChromeSession {
 
 export class PuppeteerChromeDriver implements ChromeDriver {
   async launchChrome(request: ChromeLaunchRequest): Promise<ChromeSession> {
+    const noSandbox = process.getuid?.() === 0 || (process.platform === 'linux' && process.env.GITHUB_ACTIONS === 'true');
     const browser = await puppeteer.launch({
       ...(request.executablePath === undefined ? {} : {executablePath: request.executablePath}),
       ...(request.channel === undefined ? {} : {channel: request.channel}),
@@ -35,7 +36,7 @@ export class PuppeteerChromeDriver implements ChromeDriver {
       headless: request.headless,
       pipe: true,
       timeout: request.startupTimeoutMs,
-      args: process.getuid?.() === 0 ? ['--no-sandbox', '--disable-setuid-sandbox'] : [],
+      args: noSandbox ? ['--no-sandbox', '--disable-setuid-sandbox'] : [],
     });
     const pages = await browser.pages();
     const page = pages[0] ?? await browser.newPage();

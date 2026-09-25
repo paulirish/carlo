@@ -50,13 +50,22 @@ export async function launch(options: LaunchOptions): Promise<App> {
     startupTimeoutMs,
     navigationTimeoutMs: positiveTimeout(options.navigationTimeoutMs, 'navigationTimeoutMs'),
   });
-  let resolveClosed!: (exit: {readonly reason: 'requested'}) => void;
-  const closed = new Promise<{readonly reason: 'requested'}>(resolve => { resolveClosed = resolve; });
+  let resolveClosed!: (exit: {readonly reason: 'requested' | 'last-window-closed'}) => void;
+  const closed = new Promise<{readonly reason: 'requested' | 'last-window-closed'}>(resolve => {
+    resolveClosed = resolve;
+  });
+  let closedResolved = false;
+  const settleClosed = (reason: 'requested' | 'last-window-closed') => {
+    if (closedResolved) return;
+    closedResolved = true;
+    resolveClosed({reason});
+  };
+  void running.disconnected.then(() => settleClosed('last-window-closed'));
   let close: Promise<void> | undefined;
   return {
     closed,
     close() {
-      close ??= running.close().then(() => resolveClosed({reason: 'requested'}));
+      close ??= running.close().then(() => settleClosed('requested'));
       return close;
     },
   };

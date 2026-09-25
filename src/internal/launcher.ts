@@ -15,6 +15,7 @@ export interface HarnessOptions {
 
 export interface RunningApplication {
   readonly processId: number | undefined;
+  readonly disconnected: Promise<void>;
   /** Private test observation for Carlo-owned resource assertions. */
   readonly profilePath: string;
   close(): Promise<void>;
@@ -31,7 +32,12 @@ async function removeTemporaryProfile(profilePath: string): Promise<void> {
   await rm(profilePath, {recursive: true, force: true, maxRetries: 3});
 }
 
-async function cleanup(session: ChromeSession | undefined, profilePath: string, timeoutMs: number): Promise<void> {
+async function cleanup(
+  session: ChromeSession | undefined,
+  profilePath: string,
+  timeoutMs: number,
+  removeProfile: boolean,
+): Promise<void> {
   let browserFailure: unknown;
   if (session !== undefined) {
     try {
@@ -50,11 +56,13 @@ async function cleanup(session: ChromeSession | undefined, profilePath: string, 
     }
   }
 
-  let profileFailure: unknown;
-  try {
-    await withDeadline(removeTemporaryProfile(profilePath), timeoutMs, 'ERR_CLEANUP_FAILED', 'cleanup.profile');
-  } catch (error) {
-    profileFailure = error;
+  let profileFailure: unknown | undefined;
+  if (removeProfile) {
+    try {
+      await withDeadline(removeTemporaryProfile(profilePath), timeoutMs, 'ERR_CLEANUP_FAILED', 'cleanup.profile');
+    } catch (error) {
+      profileFailure = error;
+    }
   }
 
   if (profileFailure !== undefined)
@@ -91,12 +99,12 @@ export async function launchWithDriver(driver: ChromeDriver, options: HarnessOpt
       options.navigationTimeoutMs, 'ERR_BRIDGE_INIT_FAILED', 'launch.bridge',
     ).catch(error => { throw mapped(error, 'ERR_BRIDGE_INIT_FAILED', 'launch.bridge', 'Document bridge failed to become ready'); });
   } catch (error) {
-    if (ownsProfile) {
-      try { await cleanup(session, profilePath, shutdownTimeoutMs); } catch (cleanupError) {
-        throw carloError('ERR_CLEANUP_FAILED', 'launch.cleanup', 'Launch failed and cleanup also failed', cleanupError, {
-          launchFailed: true,
-        });
-      }
+    try {
+      await cleanup(session, profilePath, shutdownTimeoutMs, ownsProfile);
+    } catch (cleanupError) {
+      throw carloError('ERR_CLEANUP_FAILED', 'launch.cleanup', 'Launch failed and cleanup also failed', cleanupError, {
+        launchFailed: true,
+      });
     }
     throw error;
   }
@@ -105,10 +113,10 @@ export async function launchWithDriver(driver: ChromeDriver, options: HarnessOpt
   const activeSession = session;
   return {
     processId: activeSession.processId,
+    disconnected: activeSession.disconnected.then(() => {}),
     profilePath,
     close() {
-      closing ??= ownsProfile ? cleanup(activeSession, profilePath, shutdownTimeoutMs) :
-        withDeadline(activeSession.closeGracefully(), shutdownTimeoutMs, 'ERR_CLEANUP_FAILED', 'cleanup.browser-close');
+      closing ??= cleanup(activeSession, profilePath, shutdownTimeoutMs, ownsProfile);
       return closing;
     },
   };
