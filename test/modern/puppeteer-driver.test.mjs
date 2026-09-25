@@ -49,6 +49,8 @@ test('Puppeteer task driver launches pinned Chrome', {timeout: 30_000}, async t 
   const cacheDir = process.env.CARLO_BROWSER_DIR || path.resolve('.local-browser');
   const executablePath = computeExecutablePath({browser: Browser.CHROME, buildId: CHROME_BUILD_ID, cacheDir, platform: detectBrowserPlatform()});
   if (!fs.existsSync(executablePath)) return t.skip('run npm run download-browser to provision pinned Chrome');
+  const launchArgs = process.platform === 'linux' && process.env.GITHUB_ACTIONS === 'true' ?
+    ['--no-sandbox', '--disable-setuid-sandbox'] : undefined;
   const [{launchWithDriver}, {PuppeteerChromeDriver}] = await Promise.all([
     import(pathToFileURL(path.resolve('dist/internal/launcher.js'))),
     import(pathToFileURL(path.resolve('dist/internal/puppeteer-driver.js'))),
@@ -56,7 +58,7 @@ test('Puppeteer task driver launches pinned Chrome', {timeout: 30_000}, async t 
   const fixture = pathToFileURL(path.resolve('test/fixtures/packed-consumer/index.html'));
   running = await launchWithDriver(new PuppeteerChromeDriver(), {
     entry: fixture,
-    request: {headless: true, executablePath, startupTimeoutMs: 15_000},
+    request: {...(launchArgs === undefined ? {} : {launchArgs}), headless: true, executablePath, startupTimeoutMs: 15_000},
     startupTimeoutMs: 15_000,
     navigationTimeoutMs: 15_000,
     shutdownTimeoutMs: 10_000,

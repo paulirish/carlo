@@ -5,6 +5,7 @@ export interface ChromeLaunchRequest {
   readonly profilePath: string;
   readonly headless: boolean;
   readonly startupTimeoutMs: number;
+  readonly launchArgs?: readonly string[];
 }
 
 export interface ChromeSession {
