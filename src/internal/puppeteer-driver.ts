@@ -31,11 +31,11 @@ export class PuppeteerChromeDriver implements ChromeDriver {
     const browser = await puppeteer.launch({
       ...(request.executablePath === undefined ? {} : {executablePath: request.executablePath}),
       ...(request.channel === undefined ? {} : {channel: request.channel}),
+      ...(request.launchArgs === undefined ? {} : {args: [...request.launchArgs]}),
       userDataDir: request.profilePath,
       headless: request.headless,
       pipe: true,
       timeout: request.startupTimeoutMs,
-      args: [...(request.launchArgs ?? [])],
     });
     const pages = await browser.pages();
     const page = pages[0] ?? await browser.newPage();
