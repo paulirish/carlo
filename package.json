@@ -6,17 +6,17 @@
   "engines": {
     "node": ">=22.12.0"
   },
-  "main": "index.js",
-  "directories": {
-    "lib": "lib"
-  },
   "scripts": {
-    "lint": "eslint .",
-    "download-browser": "node scripts/download-browser.js",
-    "test:unit": "node --test test/find_chrome.spec.js test/security.spec.js rpc/test.js test/color.spec.js",
-    "test:browser": "node --test test/app.spec.js",
-    "test": "npm run test:unit && npm run test:browser",
-    "headful-test": "node test/headful.js"
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "lint": "eslint . && tsc -p tsconfig.json --noEmit",
+    "download-browser": "npm run build && node dist/scripts/download-browser.js",
+    "test:unit": "node --test --test-timeout=10000 test/find_chrome.spec.js test/security.spec.js rpc/test.js test/color.spec.js test/modern/harness.test.mjs",
+    "test:browser": "node --test --test-timeout=45000 test/modern/puppeteer-driver.test.mjs",
+    "test:pack": "node test/packed-consumer.mjs",
+    "test": "npm run build && npm run test:unit && npm run test:browser && npm run test:pack",
+    "headful-test": "node test/headful.js",
+    "prepack": "npm run build"
   },
   "keywords": [],
   "author": "The Chromium Authors",
@@ -29,7 +29,23 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@types/node": "24.3.1",
     "eslint": "10.10.0",
-    "globals": "17.12.0"
-  }
+    "globals": "17.12.0",
+    "proxy-agent": "8.0.1",
+    "typescript": "5.9.2"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "type": "module"
 }
