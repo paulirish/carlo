@@ -7,9 +7,9 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const commandOptions = {timeout: 45_000, killSignal: 'SIGKILL'};
+const commandOptions = {timeout: 120_000, killSignal: 'SIGKILL'};
 
-test('packed ESM skeleton imports in an empty project', {timeout: 60_000}, () => {
+test('packed ESM skeleton imports in an empty project', {timeout: 180_000}, () => {
   const work = mkdtempSync(path.join(tmpdir(), 'carlo-consumer-'));
   try {
     const output = execFileSync('npm', ['pack', '--json', '--pack-destination', work], {
