@@ -60,13 +60,16 @@ export async function launch(options: LaunchOptions): Promise<App> {
     closedResolved = true;
     resolveClosed({reason});
   };
-  void running.disconnected.then(() => settleClosed('last-window-closed'));
+  let closeRequested = false;
+  void running.disconnected.then(() => {
+    if (!closeRequested) settleClosed('last-window-closed');
+  });
   let close: Promise<void> | undefined;
   return {
     closed,
     close() {
-      settleClosed('requested');
-      close ??= running.close();
+      closeRequested = true;
+      close ??= running.close().then(() => settleClosed('requested'));
       return close;
     },
   };
